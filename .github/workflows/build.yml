@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -25,3 +28,14 @@ jobs:
         with:
           name: yak-alarm-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish APK to Release (latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk YakAlarm.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest YakAlarm.apk \
+            --title "약 알람 최신 버전" \
+            --notes "휴대폰에서 YakAlarm.apk 를 눌러 다운로드 후 설치하세요." \
+            --target "$GITHUB_SHA"
