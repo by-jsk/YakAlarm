@@ -23,7 +23,11 @@ jobs:
           test -f app/yakalarm.keystore || { echo "::error::signing key missing"; exit 1; }
           echo "ANDROID_HOME=$ANDROID_HOME"
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          set -o pipefail
+          ./gradlew assembleDebug --no-daemon 2>&1 | tee build.log || {
+            grep -E "^e: |error:|What went wrong|^> |Exception" -A2 build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done
+            exit 1
+          }
 
       - uses: actions/upload-artifact@v4
         with:
