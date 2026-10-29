@@ -18,9 +18,13 @@ android {
     }
 
     // 항상 같은 서명 키를 써야 폰에서 덮어쓰기 업데이트가 됨
-    // 키와 비밀번호는 GitHub 비밀 설정(Secrets)에서 받아옴
-    val ksFile = file("yakalarm.keystore")
-    val ksPass = System.getenv("KEYSTORE_PASSWORD")
+    // 고정 서명 키 (app/yakalarm.keystore + app/signing.properties)
+    val signProps = java.util.Properties().apply {
+        val f = file("signing.properties")
+        if (f.exists()) f.inputStream().use { load(it) }
+    }
+    val ksFile = file(signProps.getProperty("storeFile", "yakalarm.keystore"))
+    val ksPass: String? = signProps.getProperty("storePassword")
     val hasKey = ksFile.exists() && !ksPass.isNullOrEmpty()
     signingConfigs {
         create("fixed") {

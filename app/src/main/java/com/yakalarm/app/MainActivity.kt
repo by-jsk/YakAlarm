@@ -35,6 +35,10 @@ import java.util.Locale
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
+    companion object {
+        const val UPDATE_URL = "https://github.com/by-jsk/YakAlarm/releases/download/latest/YakAlarm.apk"
+    }
+
     private val meds = mutableListOf<Medicine>()
     private lateinit var adapter: MedAdapter
     private lateinit var list: RecyclerView
@@ -63,6 +67,22 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // 화면에 버전 표시 (업데이트 확인용)
         val ver = packageManager.getPackageInfo(packageName, 0).versionName
         findViewById<TextView>(R.id.hintText).append("\n버전 $ver")
+
+        // 최신 APK 다운로드 페이지 열기 (받은 파일을 누르면 덮어쓰기 설치)
+        findViewById<View>(R.id.updateButton).setOnClickListener {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("최신 버전 받기")
+                .setMessage("브라우저에서 최신 앱 파일을 받아요.\n다운로드가 끝나면 파일을 눌러 '업데이트'를 선택하세요.\n등록한 약 목록은 그대로 남아요.")
+                .setPositiveButton("받기") { _, _ ->
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(UPDATE_URL)))
+                    } catch (_: Exception) {
+                        Toast.makeText(this, "브라우저를 열 수 없어요", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("취소", null)
+                .show()
+        }
 
         stopRingingButton = findViewById(R.id.stopRingingButton)
         stopRingingButton.setOnClickListener {
