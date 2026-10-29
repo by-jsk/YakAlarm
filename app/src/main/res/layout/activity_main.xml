@@ -45,6 +45,7 @@
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
             android:paddingBottom="8dp"
+            android:id="@+id/hintText"
             android:text="스위치로 켜기/끄기 · 누르면 미리 듣기 · 옆으로 밀면 삭제"
             android:textColor="@color/subtext"
             android:textSize="15sp" />

@@ -60,6 +60,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         list.adapter = adapter
         attachSwipeToDelete()
 
+        // 화면에 버전 표시 (업데이트 확인용)
+        val ver = packageManager.getPackageInfo(packageName, 0).versionName
+        findViewById<TextView>(R.id.hintText).append("\n버전 $ver")
+
         stopRingingButton = findViewById(R.id.stopRingingButton)
         stopRingingButton.setOnClickListener {
             startService(Intent(this, AlarmService::class.java).setAction(AlarmService.ACTION_STOP))

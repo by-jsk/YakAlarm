@@ -18,7 +18,16 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Restore signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then echo "::warning::KEYSTORE_B64 secret is missing - using temporary key"; exit 0; fi
+          echo "$KEYSTORE_B64" | base64 -d > app/yakalarm.keystore
+
       - name: Build debug APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
           chmod +x gradlew
