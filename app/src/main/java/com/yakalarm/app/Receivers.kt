@@ -10,6 +10,7 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getIntExtra(AlarmScheduler.EXTRA_ID, -1)
         val med = MedStore.find(context, id) ?: return
+        if (!med.enabled) return
 
         // 다음 날 같은 시각으로 다시 예약
         AlarmScheduler.schedule(context, med, System.currentTimeMillis() + 30_000)

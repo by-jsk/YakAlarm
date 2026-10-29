@@ -5,7 +5,13 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
 
-data class Medicine(val id: Int, val name: String, val hour: Int, val minute: Int) {
+data class Medicine(
+    val id: Int,
+    val name: String,
+    val hour: Int,
+    val minute: Int,
+    val enabled: Boolean = true
+) {
     fun timeText(): String {
         val ampm = if (hour < 12) "오전" else "오후"
         val h = if (hour % 12 == 0) 12 else hour % 12
@@ -31,13 +37,21 @@ object MedStore {
             for (i in 0 until arr.length()) {
                 val o = arr.getJSONObject(i)
                 result.add(
-                    Medicine(o.getInt("id"), o.getString("name"), o.getInt("hour"), o.getInt("minute"))
+                    Medicine(
+                        o.getInt("id"), o.getString("name"), o.getInt("hour"), o.getInt("minute"),
+                        o.optBoolean("enabled", true)
+                    )
                 )
             }
         } catch (_: Exception) {
         }
-        result.sortBy { it.sortKey }
+        sort(result)
         return result
+    }
+
+    /** 오전 → 오후 시간순, 같은 시간이면 이름순 */
+    fun sort(list: MutableList<Medicine>) {
+        list.sortWith(compareBy<Medicine>({ it.sortKey }, { it.name }, { it.id }))
     }
 
     fun save(ctx: Context, list: List<Medicine>) {
@@ -49,6 +63,7 @@ object MedStore {
                     .put("name", it.name)
                     .put("hour", it.hour)
                     .put("minute", it.minute)
+                    .put("enabled", it.enabled)
             )
         }
         prefs(ctx).edit().putString(KEY_LIST, arr.toString()).apply()

@@ -45,9 +45,25 @@
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
             android:paddingBottom="8dp"
-            android:text="누르면 미리 듣기 · 옆으로 밀면 삭제"
+            android:text="스위치로 켜기/끄기 · 누르면 미리 듣기 · 옆으로 밀면 삭제"
             android:textColor="@color/subtext"
             android:textSize="15sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/stopRingingButton"
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="@color/danger"
+            android:text="🔔 울리는 알람 끄기"
+            android:textColor="#FFFFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:cornerRadius="16dp" />
 
         <FrameLayout
             android:layout_width="match_parent"

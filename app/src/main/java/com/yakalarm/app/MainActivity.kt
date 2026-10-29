@@ -3,7 +3,10 @@ package com.yakalarm.app
 import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -52,27 +55,81 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         meds.addAll(MedStore.load(this))
         list = findViewById(R.id.medList)
         emptyView = findViewById(R.id.emptyText)
-        adapter = MedAdapter(meds) { preview(it) }
+        adapter = MedAdapter(meds, onClick = { preview(it) }, onToggle = { med, on -> setEnabled(med, on) })
         list.layoutManager = LinearLayoutManager(this)
         list.adapter = adapter
         attachSwipeToDelete()
 
+        stopRingingButton = findViewById(R.id.stopRingingButton)
+        stopRingingButton.setOnClickListener {
+            startService(Intent(this, AlarmService::class.java).setAction(AlarmService.ACTION_STOP))
+            stopRingingButton.visibility = View.GONE
+        }
         findViewById<View>(R.id.addButton).setOnClickListener { showAddDialog() }
         findViewById<View>(R.id.deleteAllButton).setOnClickListener { confirmDeleteAll() }
 
-        refreshEmpty()
+        ContextCompat.registerReceiver(
+            this, ringingReceiver,
+            IntentFilter().apply {
+                addAction(AlarmService.ACTION_STARTED)
+                addAction(AlarmService.ACTION_CLOSED)
+            },
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+
+        refreshList()
         AlarmScheduler.scheduleAll(this)
         previewTts = TextToSpeech(this, this)
     }
 
+    private lateinit var stopRingingButton: View
+
+    private val ringingReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            updateRingingButton()
+        }
+    }
+
+    private fun updateRingingButton() {
+        stopRingingButton.visibility =
+            if (AlarmService.activeNames.isNotEmpty()) View.VISIBLE else View.GONE
+    }
+
     override fun onResume() {
         super.onResume()
+        updateRingingButton()
         checkPermissionsStepByStep()
     }
 
     override fun onDestroy() {
+        unregisterReceiver(ringingReceiver)
         previewTts?.shutdown()
         super.onDestroy()
+    }
+
+    /** 항상 시간순으로 정렬해서 화면 갱신 */
+    @android.annotation.SuppressLint("NotifyDataSetChanged")
+    private fun refreshList() {
+        MedStore.sort(meds)
+        adapter.notifyDataSetChanged()
+        refreshEmpty()
+    }
+
+    // ---------- 알람 켜기/끄기 ----------
+    private fun setEnabled(med: Medicine, on: Boolean) {
+        val idx = meds.indexOfFirst { it.id == med.id }
+        if (idx < 0 || meds[idx].enabled == on) return
+        val updated = meds[idx].copy(enabled = on)
+        meds[idx] = updated
+        MedStore.save(this, meds)
+        if (on) {
+            AlarmScheduler.schedule(this, updated)
+            Toast.makeText(this, "${updated.name} 알람을 켰어요 (${updated.timeText()})", Toast.LENGTH_SHORT).show()
+        } else {
+            AlarmScheduler.cancel(this, updated.id)
+            Toast.makeText(this, "${updated.name} 알람을 껐어요", Toast.LENGTH_SHORT).show()
+        }
+        list.post { adapter.notifyItemChanged(idx) }
     }
 
     // ---------- 미리 듣기 ----------
@@ -122,11 +179,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun addMed(med: Medicine) {
         meds.add(med)
-        meds.sortBy { it.sortKey }
+        MedStore.sort(meds)
         MedStore.save(this, meds)
-        AlarmScheduler.schedule(this, med)
-        adapter.notifyDataSetChanged()
-        refreshEmpty()
+        if (med.enabled) AlarmScheduler.schedule(this, med)
+        refreshList()
+        list.scrollToPosition(meds.indexOfFirst { it.id == med.id }.coerceAtLeast(0))
     }
 
     // ---------- 옆으로 밀어서 삭제 ----------
@@ -195,8 +252,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 meds.forEach { AlarmScheduler.cancel(this, it.id) }
                 meds.clear()
                 MedStore.save(this, meds)
-                adapter.notifyDataSetChanged()
-                refreshEmpty()
+                refreshList()
             }
             .setNegativeButton("취소", null)
             .show()

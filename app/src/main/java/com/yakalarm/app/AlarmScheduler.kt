@@ -52,6 +52,8 @@ object AlarmScheduler {
     }
 
     fun scheduleAll(ctx: Context) {
-        MedStore.load(ctx).forEach { schedule(ctx, it) }
+        MedStore.load(ctx).forEach {
+            if (it.enabled) schedule(ctx, it) else cancel(ctx, it.id)
+        }
     }
 }

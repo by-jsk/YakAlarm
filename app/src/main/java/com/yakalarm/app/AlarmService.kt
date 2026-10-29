@@ -39,6 +39,7 @@ class AlarmService : Service(), TextToSpeech.OnInitListener {
         const val EXTRA_NAME = "name"
         const val ACTION_STOP = "com.yakalarm.app.STOP"
         const val ACTION_CLOSED = "com.yakalarm.app.CLOSED"
+        const val ACTION_STARTED = "com.yakalarm.app.STARTED"
         const val CHANNEL_ID = "med_alarm"
         private const val NOTIF_ID = 1001
         private const val REPEAT_COUNT = 10           // 한 번에 외치는 횟수
@@ -87,6 +88,7 @@ class AlarmService : Service(), TextToSpeech.OnInitListener {
         intent?.getStringExtra(EXTRA_NAME)?.let { names.add(it) }
         activeNames = names.toList()
         startForegroundCompat()
+        sendBroadcast(Intent(ACTION_STARTED).setPackage(packageName))
 
         if (names.isEmpty()) {
             stopAlarm()
